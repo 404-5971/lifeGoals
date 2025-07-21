@@ -29,6 +29,26 @@ def load_goals() -> list[str]:
     except FileNotFoundError:
         return []
 
+def load_goals_by_category() -> dict[str, list[str]]:
+    """Parse the goals file into a dict of {category: [goals]}"""
+    goals_by_cat: dict[str, list[str]] = {}
+    current_cat = None
+    try:
+        with open(GOALS_FILE, "r") as file:
+            for line in file:
+                line = line.strip()
+                if not line:
+                    continue
+                if line.startswith("[") and line.endswith("]"):
+                    current_cat = line[1:-1].strip()
+                    if current_cat not in goals_by_cat:
+                        goals_by_cat[current_cat] = []
+                elif current_cat:
+                    goals_by_cat[current_cat].append(line)
+        return goals_by_cat
+    except FileNotFoundError:
+        return {}
+
 def load_goals_metadata() -> list[GoalMetadata]:
     try:
         with open(GOALS_METADATA_FILE, "r") as file:
@@ -43,28 +63,37 @@ def save_goals_metadata(goals_metadata: list[GoalMetadata]) -> None:
         json.dump(goals_metadata, file, indent=2)
 
 def add_goals_metadata() -> None:
-    goals: list[str] = load_goals()
+    goals_by_cat = load_goals_by_category()
+    all_goals = [goal for goals in goals_by_cat.values() for goal in goals]
     goals_metadata: list[GoalMetadata] = load_goals_metadata()
-    # Build a set of existing goal strings in metadata
     existing_goals_with_metadata: set[Optional[str]] = {meta.get('goal') for meta in goals_metadata}
-    # Add metadata for any goal not present
-    for goal in goals:
+    for goal in all_goals:
         if goal not in existing_goals_with_metadata:
             goals_metadata.append(GoalMetadata(goal=goal, completed=False, date=None, time=None, timezone=None))
     save_goals_metadata(goals_metadata)
 
 @app.route("/", methods=["GET"])
 def index() -> FlaskResponse:
-    goals: list[str] = load_goals()
+    goals_by_cat = load_goals_by_category()
+    categories = list(goals_by_cat.keys())
+    selected_category = request.args.get("category") or (categories[0] if categories else None)
+    goals = goals_by_cat.get(selected_category, []) if selected_category else []
     goals_metadata: list[GoalMetadata] = load_goals_metadata()
     add_goals_metadata()
-    resp = make_response(render_template("index.html", goals=goals, goals_metadata=goals_metadata))
+    resp = make_response(render_template(
+        "index.html",
+        categories=categories,
+        selected_category=selected_category,
+        goals=goals,
+        goals_metadata=goals_metadata
+    ))
     # Set user_tz cookie if not present (will be set by JS on client if missing)
     return resp
 
 @app.route("/complete", methods=["POST"])
 def complete_goal() ->  werkzeug.wrappers.Response:
     goal: Optional[str] = request.form.get("goal")
+    category: Optional[str] = request.form.get("category")
     if goal is None:
         return redirect(url_for("index"))
     now: datetime = datetime.now(ZoneInfo("UTC")).astimezone()
@@ -84,6 +113,8 @@ def complete_goal() ->  werkzeug.wrappers.Response:
                 if goal_metadata["timezone"]:
                     goal_metadata["timezone"] = f"{goal_metadata['timezone'][:3]}:{goal_metadata['timezone'][3:]}"
     save_goals_metadata(goals_metadata)
+    if category:
+        return redirect(url_for("index", category=category))
     return redirect(url_for("index"))
 
 if __name__ == "__main__":

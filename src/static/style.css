@@ -59,3 +59,31 @@ li.goal-item {
     color: #fff;
     outline: none;
 }
+.category-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+    gap: 12px;
+}
+.category-tab {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 6px 6px 0 0;
+    background: #2c2f33;
+    color: #e8e6e3;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1.1em;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    border: none;
+    border-bottom: 2px solid transparent;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    margin-bottom: -2px;
+}
+.category-tab.active, .category-tab:hover, .category-tab:focus {
+    background: #5865f2;
+    color: #fff;
+    border-bottom: 2px solid #fff;
+    outline: none;
+    box-shadow: 0 2px 8px rgba(88,101,242,0.15);
+}

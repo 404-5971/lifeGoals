@@ -9,6 +9,13 @@
 <body>
     <div class="container">
         <h1>My Life Goals</h1>
+        {% if categories %}
+        <div class="category-tabs">
+            {% for cat in categories %}
+            <a href="/?category={{ cat }}" class="category-tab{% if cat == selected_category %} active{% endif %}">{{ cat }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% if goals %}
         <ul>
             {% for goal in goals %}
@@ -30,13 +37,14 @@
                 {% endif %}
                 <form method="POST" action="/complete" style="display:inline; float:right; margin-left: 16px;">
                     <input type="hidden" name="goal" value="{{ goal }}">
+                    <input type="hidden" name="category" value="{{ selected_category }}">
                     <button type="submit" class="complete-btn">{% if meta and meta.completed %}uncomplete{% else %}complete{% endif %}</button>
                 </form>
             </li>
             {% endfor %}
         </ul>
         {% else %}
-        <p>No goals found. Add some to <code>lifeGoals.txt</code>!</p>
+        <p>No goals found in this category.</p>
         {% endif %}
     </div>
 </body>
