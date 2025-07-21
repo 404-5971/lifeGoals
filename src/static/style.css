@@ -1,0 +1,33 @@
+body {
+    background: #181a1b;
+    color: #e8e6e3;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: #23272a;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+    padding: 32px 24px;
+}
+h1 {
+    text-align: center;
+    font-size: 2.2em;
+    margin-bottom: 24px;
+    color: #f8fafc;
+}
+ul {
+    list-style: disc inside;
+    padding: 0;
+}
+li {
+    margin: 12px 0;
+    font-size: 1.2em;
+    background: #2c2f33;
+    border-radius: 6px;
+    padding: 10px 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}

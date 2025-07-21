@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Life Goals</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>My Life Goals</h1>
+        {% if goals %}
+        <ul>
+            {% for goal in goals %}
+            <li>{{ goal }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No goals found. Add some to <code>lifeGoals.txt</code>!</p>
+        {% endif %}
+    </div>
+</body>
+</html>
