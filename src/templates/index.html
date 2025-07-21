@@ -12,7 +12,27 @@
         {% if goals %}
         <ul>
             {% for goal in goals %}
-            <li>{{ goal }}</li>
+            {% set meta = (goals_metadata | selectattr('goal', 'equalto', goal) | list | first) %}
+            <li class="goal-item">
+                <span class="goal-text{% if meta and meta.completed %} completed{% endif %}">{{ goal }}</span>
+                {% if meta and meta.completed %}
+                    <span style="margin-left:16px; font-size:0.95em; color:#b0b0b0;">
+                        Completed: 
+                        {% set dt = meta.date ~ ' ' ~ meta.time %}
+                        {% set original_tz = meta.timezone %}
+                        {% set user_tz = request.cookies.get('user_tz', None) %}
+                        {% if user_tz and meta.time and meta.date and meta.timezone %}
+                            <span class="completed-datetime" data-datetime="{{ meta.date }} {{ meta.time }}" data-original-tz="{{ meta.timezone }}"></span>
+                        {% else %}
+                            {{ meta.date }} {{ meta.time }}
+                        {% endif %}
+                    </span>
+                {% endif %}
+                <form method="POST" action="/complete" style="display:inline; float:right; margin-left: 16px;">
+                    <input type="hidden" name="goal" value="{{ goal }}">
+                    <button type="submit" class="complete-btn">{% if meta and meta.completed %}uncomplete{% else %}complete{% endif %}</button>
+                </form>
+            </li>
             {% endfor %}
         </ul>
         {% else %}
@@ -20,4 +40,45 @@
         {% endif %}
     </div>
 </body>
+<script>
+(function() {
+    // Set user_tz cookie if not present
+    function getTzOffsetString() {
+        const offset = -new Date().getTimezoneOffset();
+        const sign = offset >= 0 ? '+' : '-';
+        const abs = Math.abs(offset);
+        const hours = String(Math.floor(abs / 60)).padStart(2, '0');
+        const mins = String(abs % 60).padStart(2, '0');
+        return `${sign}${hours}:${mins}`;
+    }
+    if (!document.cookie.split('; ').find(row => row.startsWith('user_tz='))) {
+        document.cookie = `user_tz=${getTzOffsetString()}; path=/; max-age=31536000`;
+    }
+
+    // Adjust completed-datetime spans
+    document.querySelectorAll('.completed-datetime').forEach(function(span) {
+        const dtStr = span.getAttribute('data-datetime');
+        const origTz = span.getAttribute('data-original-tz');
+        const userTz = getTzOffsetString();
+        if (dtStr && origTz && userTz) {
+            // Parse date/time in original timezone
+            // dtStr: '21/07/2025 18:10:18', origTz: '-05:00', userTz: '-04:00'
+            const [d, m, y, h, min, s] = dtStr.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})/).slice(1).map(Number);
+            // Construct ISO string with original tz
+            const iso = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}:${String(s).padStart(2,'0')}${origTz}`;
+            const date = new Date(iso);
+            // Convert to user's timezone offset
+            // We can't set Date's timezone, so adjust by offset difference
+            const origOffset = parseInt(origTz.slice(0,3),10)*60 + parseInt(origTz.slice(4,6),10)*(origTz[0]==='-'?-1:1);
+            const userOffset = parseInt(userTz.slice(0,3),10)*60 + parseInt(userTz.slice(4,6),10)*(userTz[0]==='-'?-1:1);
+            const diffMinutes = (userOffset - origOffset);
+            const userDate = new Date(date.getTime() + diffMinutes*60000);
+            // Format as DD/MM/YYYY HH:MM
+            const fmt = n => String(n).padStart(2,'0');
+            const disp = `${fmt(userDate.getDate())}/${fmt(userDate.getMonth()+1)}/${userDate.getFullYear()} ${fmt(userDate.getHours())}:${fmt(userDate.getMinutes())}`;
+            span.textContent = disp;
+        }
+    });
+})();
+</script>
 </html>
